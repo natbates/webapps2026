@@ -1,0 +1,10 @@
+
+Django
+djangorestframework
+django-crispy-forms
+crispy-bootstrap5
+requests
+pytest
+pytest-django
+pytest-cov
+coverage
