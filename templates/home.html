@@ -1,0 +1,46 @@
+{% extends 'payapp/base.html' %}
+{% load static %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<section class="mt-8">
+  <div class="bg-white p-8 container-card flex flex-col md:flex-row items-center gap-6">
+    <div class="flex-1">
+      <h1 class="text-4xl mb-3">Welcome to Compansate Companion</h1>
+      <p class="text-lg text-slate-600 mb-4">Send and request money between registered users.</p>
+      <div class="flex gap-3">
+        {% if user.is_authenticated %}
+          <a class="bg-sky-600 text-white px-4 py-2" href="/payments/">View Transactions</a>
+        {% else %}
+          <a class="bg-sky-600 text-white px-4 py-2" href="{% url 'register:login' %}">Login</a>
+          <a class="border px-4 py-2" href="/register/">Register</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="w-48">
+      <img src="{% static 'images/logo.svg' %}" alt="PayDemo logo" class="w-full">
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+    <div class="container-card">
+      <h3 class="text-lg">How it works</h3>
+      <p class="text-sm text-slate-600">Users choose a currency at registration and have a starting balance. You can send and request payments from other users.</p>
+    </div>
+    <div class="container-card">
+      <h3 class="text-lg">Conversion API</h3>
+      <p class="text-sm text-slate-600">The site includes a REST conversion endpoint with static rates.</p>
+      <a class="text-sky-600" href="/api/conversion/GBP/USD/100/">Try conversion example</a>
+    </div>
+    <div class="container-card">
+      <h3 class="text-lg">Quick links</h3>
+      <ul class="mt-2">
+        <li><a class="text-sky-600" href="/payments/">Transactions</a></li>
+        <li><a class="text-sky-600" href="/register/">Register</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}

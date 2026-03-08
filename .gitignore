@@ -1,0 +1,39 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+
+# Django stuff
+webapps.db
+*.sqlite3
+/media/
+/staticfiles/
+
+# Migrations (keep tracked .py, ignore compiled)
+*/migrations/__pycache__/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Coverage / test output
+htmlcov/
+.coverage*
+.pytest_cache/
+
+# Local environment
+.env
+.env.*

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Payments{% endblock %}</title>
+    {% load static %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
+  </head>
+  <body>
+    <nav class="bg-neutral-200 text-neutral-900">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a class="flex items-center gap-3" href="/">
+          <img src="{% static 'images/logo.svg' %}" alt="Compansate Companion" class="h-8 inline-block">
+        </a>
+        <div class="flex items-center space-x-3">
+          {% if request.user.is_authenticated %}
+            <a class="px-3 py-2 bg-white text-black border border-black/10 rounded" href="/payments/">Transactions</a>
+            <a class="px-3 py-2 bg-white text-black border border-black/10 rounded" href="/payments/requests/">Requests</a>
+            <a class="px-3 py-2 bg-white text-black border border-black/10 rounded" href="/payments/make/">Make Payment</a>
+            <a class="px-3 py-2 bg-sky-600 text-white rounded" href="{% url 'register:admin_dashboard' %}">Admin</a>
+            <a class="px-3 py-2 bg-sky-600 text-white rounded" href="{% url 'register:logout' %}">Logout</a>
+          {% else %}
+            <a class="px-3 py-2 bg-sky-600 text-white rounded" href="{% url 'register:login' %}">Login</a>
+            <a class="px-3 py-2 bg-white text-black border border-black/10 rounded" href="/register/">Register</a>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4">
+      {% block content %}{% endblock %}
+    </main>
+    
+  </body>
+</html>

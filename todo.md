@@ -1,8 +1,6 @@
 Phase 1: Setup and Data Access Layer (15% marks) – Start Here
 Focus on getting the database/models working so you can build on them. This is foundational and quick to implement.
 
-Update requirements.txt with actual packages (Effort: 10 min)
-
 Convert the notes into pip-installable format. Include: Django, djangorestframework, django-crispy-forms, crispy-bootstrap5 (for styling), requests (for currency API calls if needed, though rates are hardcoded).
 Why: Needed for all layers. Run pip install -r requirements.txt after.
 Validate: No errors on install.

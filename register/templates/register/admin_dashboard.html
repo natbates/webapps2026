@@ -1,0 +1,59 @@
+{% extends 'payapp/base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+  <div>
+    <div class="container-card mb-4">
+      <h5 class="text-lg mb-2">Create admin</h5>
+      {% if message %}<div class="text-green-600 mb-2">{{ message }}</div>{% endif %}
+      <form method="post" class="space-y-2">
+        {% csrf_token %}
+        <input name="username" placeholder="Username">
+        <input name="password" type="password" placeholder="Password">
+        <input name="email" type="email" placeholder="Email">
+        <select name="currency">
+          {% for code, label in currency_choices %}
+            <option value="{{ code }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <div><button class="bg-sky-600 text-white px-3 py-1">Create Admin</button></div>
+      </form>
+    </div>
+
+    <div class="container-card">
+      <h5 class="text-lg mb-2">Users</h5>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="text-left">
+            <tr><th class="pr-4">Username</th><th class="pr-4">Email</th><th class="pr-4">Currency</th><th>Balance</th></tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+              <tr><td class="pr-4">{{ u.username }}</td><td class="pr-4">{{ u.email }}</td><td class="pr-4">{{ u.currency }}</td><td>{{ u.balance }}</td></tr>
+            {% empty %}
+              <tr><td colspan="4">No users.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="container-card">
+      <h5 class="text-lg mb-2">Recent transactions</h5>
+      <ul class="space-y-2">
+        {% for t in transactions %}
+          <li>{{ t.created_at }} — {{ t.sender }} → {{ t.receiver }} — {{ t.amount }} {{ t.currency }}</li>
+        {% empty %}
+          <li>No transactions.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<p class="mt-4"><a class="text-sky-600" href="/">Home</a> — <a class="text-sky-600" href="{% url 'register:logout' %}">Logout</a></p>
+{% endblock %}

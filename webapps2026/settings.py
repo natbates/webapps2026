@@ -43,11 +43,10 @@ INSTALLED_APPS = [
 INSTALLED_APPS += [
     'rest_framework',
     'crispy_forms',
-    'crispy_bootstrap5',
+    'crispy_tailwind',
     'register',
     'payapp',
     'api',
-    'core',
 ]
 
 MIDDLEWARE = [
@@ -65,7 +64,7 @@ ROOT_URLCONF = 'webapps2026.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -87,7 +86,7 @@ WSGI_APPLICATION = 'webapps2026.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'webapps.db',
     }
 }
 
@@ -126,15 +125,27 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 # Media (user-uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Where `collectstatic` will gather static files for production
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Include the project-level `static/` directory so runserver and collectstatic
+# find the project's static assets during development.
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
 # Crispy forms configuration
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
-CRISPY_TEMPLATE_PACK = "bootstrap5"
+CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
+CRISPY_TEMPLATE_PACK = "tailwind"
+
+# Use custom user model defined in `register` app (per brief: extend AbstractUser)
+AUTH_USER_MODEL = 'register.User'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
