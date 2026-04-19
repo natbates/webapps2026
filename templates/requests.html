@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Requests{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto mt-8">
+  <div class="mb-6 flex flex-wrap gap-3">
+    <a class="rounded-2xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700" href="{% url 'payapp:request_payment' %}">Send a request</a>
+    <a class="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:border-slate-400" href="{% url 'payapp:make_payment' %}">Send money</a>
+  </div>
+  <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm mb-6">
+    <h2 class="text-xl mb-3">Incoming Requests</h2>
+    {% if incoming_requests %}
+      <ul class="space-y-3">
+        {% for r in incoming_requests %}
+          <li class="p-3 border border-black/5 rounded-3xl bg-slate-50 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div class="min-w-0">
+              <div class="font-semibold">{{ r.requester.username }} — {{ r.amount }} {{ r.currency }}</div>
+              {% if r.message %}<div class="text-sm text-slate-600 mt-2">{{ r.message }}</div>{% endif %}
+              <div class="text-xs text-slate-500 mt-2">Requested {{ r.created_at|date:'M d, Y H:i' }}</div>
+            </div>
+            <div class="flex gap-2 flex-wrap md:justify-end">
+              <form method="post" action="{% url 'payapp:accept_request' r.pk %}">{% csrf_token %}
+                <button class="rounded-2xl bg-emerald-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-emerald-700" type="submit">Accept</button>
+              </form>
+              <form method="post" action="{% url 'payapp:reject_request' r.pk %}">{% csrf_token %}
+                <button class="rounded-2xl border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-900 transition hover:border-slate-400" type="submit">Reject</button>
+              </form>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-slate-600">No incoming requests.</p>
+    {% endif %}
+  </div>
+
+  <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <h2 class="text-xl mb-3">Outgoing Requests</h2>
+    {% if outgoing_requests %}
+      <ul class="space-y-3">
+        {% for r in outgoing_requests %}
+          <li class="p-3 border border-black/5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div class="font-semibold">To: {{ r.requested_from.username }} — {{ r.amount }} {{ r.currency }}</div>
+              {% if r.message %}<div class="text-sm text-slate-600">{{ r.message }}</div>{% endif %}
+              <div class="text-xs text-slate-500">Requested {{ r.created_at }} — Pending</div>
+            </div>
+            <form method="post" action="{% url 'payapp:cancel_request' r.pk %}">{% csrf_token %}
+              <button class="rounded-2xl border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-900 transition hover:border-slate-400" type="submit">Cancel</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="text-slate-600">No outgoing requests.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

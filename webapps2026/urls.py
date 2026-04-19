@@ -14,20 +14,18 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView, TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
-    path('accounts/', include('django.contrib.auth.urls')),
+    path('login/', include(('login.urls', 'login'), namespace='login')),
+    path('register/login/', RedirectView.as_view(url='/login/', permanent=False)),
+    path('admin-dashboard/', include(('admindashboard.urls', 'admindashboard'), namespace='admindashboard')),
     path('register/', include('register.urls')),
     path('payments/', include('payapp.urls')),
-    # convenience redirect so /payapp (no trailing slash) goes to /payments/
-    path('payapp', RedirectView.as_view(url='/payments/', permanent=False)),
     path('api/', include('api.urls')),
 ]
 

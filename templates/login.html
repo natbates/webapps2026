@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-12">
+  <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+    <h3 class="text-2xl font-semibold mb-4">Login</h3>
+
+
+    <form id="login-form" method="post" action="{% url 'login:login' %}" novalidate>
+      {% csrf_token %}
+      {% crispy form %}
+      <input type="hidden" name="next" value="{{ next }}">
+
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <button id="login-submit" type="submit" class="rounded-2xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700" disabled>Login</button>
+        <button type="reset" class="rounded-2xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400">Clear</button>
+        <a class="ml-auto text-sm text-sky-600 hover:underline" href="{% url 'register:register' %}">Create account</a>
+      </div>
+    </form>
+    <script>
+      (function () {
+        const form = document.getElementById('login-form');
+        const submitButton = document.getElementById('login-submit');
+        const username = form.querySelector('input[name="username"]');
+        const password = form.querySelector('input[name="password"]');
+
+        function updateSubmitState() {
+          const isValid = username && password && username.value.trim() !== '' && password.value.trim() !== '';
+          submitButton.disabled = !isValid;
+          submitButton.classList.toggle('opacity-50', !isValid);
+          submitButton.classList.toggle('cursor-not-allowed', !isValid);
+        }
+
+        if (username && password && submitButton) {
+          username.addEventListener('input', updateSubmitState);
+          password.addEventListener('input', updateSubmitState);
+          updateSubmitState();
+        }
+      })();
+    </script>
+  </div>
+</div>
+{% endblock %}

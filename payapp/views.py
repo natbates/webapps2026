@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.urls import reverse
 
 from .models import Transaction, PaymentRequest
 from django.contrib import messages
@@ -11,15 +12,12 @@ from api.views import conversion_view
 from django.utils import timezone
 from django.test.client import RequestFactory
 import json
+import urllib.request
+import urllib.error
 
 User = get_user_model()
 
-def convert_amount(amount: Decimal, from_curr: str, to_curr: str) -> Decimal:
-    """Convert `amount` from `from_curr` to `to_curr`.
-
-    Call the API conversion view directly and return a Decimal rounded to 2 d.p.,
-    or None if no rate is available.
-    """
+def _convert_amount_internal(from_curr: str, to_curr: str, amount: Decimal) -> Decimal:
     if from_curr == to_curr:
         return amount.quantize(Decimal('0.01'))
 
@@ -38,6 +36,28 @@ def convert_amount(amount: Decimal, from_curr: str, to_curr: str) -> Decimal:
         return None
 
 
+def convert_amount(request, amount: Decimal, from_curr: str, to_curr: str) -> Decimal:
+    """Convert `amount` from `from_curr` to `to_curr` via the REST service."""
+    if from_curr == to_curr:
+        return amount.quantize(Decimal('0.01'))
+
+    from_curr = from_curr.upper()
+    to_curr = to_curr.upper()
+    api_url = request.build_absolute_uri(reverse('api:conversion', args=[from_curr, to_curr, str(amount)]))
+
+    try:
+        with urllib.request.urlopen(api_url, timeout=5) as response:
+            if response.status != 200:
+                return _convert_amount_internal(from_curr, to_curr, amount)
+            data = json.loads(response.read().decode())
+            conv = data.get('converted_amount')
+            if conv is None:
+                return _convert_amount_internal(from_curr, to_curr, amount)
+            return Decimal(str(conv)).quantize(Decimal('0.01'))
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError, json.JSONDecodeError):
+        return _convert_amount_internal(from_curr, to_curr, amount)
+
+
     
 
     
@@ -49,25 +69,27 @@ def convert_amount(amount: Decimal, from_curr: str, to_curr: str) -> Decimal:
 @login_required
 def transactions(request):
     """Show transactions involving the current user."""
-    qs = Transaction.objects.filter(Q(sender=request.user) | Q(receiver=request.user))
+    qs = Transaction.objects.filter(
+        Q(sender=request.user) | Q(receiver=request.user)
+    ).order_by('-created_at')
 
     tx_list = []
     user_currency = request.user.currency
     for tx in qs:
-        converted = convert_amount(tx.amount, tx.currency, user_currency)
+        converted = convert_amount(request, tx.amount, tx.currency, user_currency)
         # If conversion unavailable, show original amount
         if converted is None:
             converted = tx.amount.quantize(Decimal('0.01'))
         tx_list.append({'tx': tx, 'converted': converted})
 
-    return render(request, 'payapp/transactions.html', {'transactions': tx_list, 'user_currency': user_currency})
+    return render(request, 'transactions.html', {'transactions': tx_list, 'user_currency': user_currency})
     
 
 
 @login_required
 def dashboard(request):
     """Simple account dashboard showing balance, currency, recent transactions and requests."""
-    recent = Transaction.objects.filter(Q(sender=request.user) | Q(receiver=request.user))[:20]
+    recent = Transaction.objects.filter(Q(sender=request.user) | Q(receiver=request.user)).order_by('-created_at')[:5]
     incoming_requests = PaymentRequest.objects.filter(requested_from=request.user, status=PaymentRequest.STATUS_REQUESTED)[:20]
     context = {
         'balance': request.user.balance,
@@ -75,15 +97,34 @@ def dashboard(request):
         'recent_transactions': recent,
         'incoming_requests': incoming_requests,
     }
-    return render(request, 'payapp/dashboard.html', context)
+    return render(request, 'dashboard.html', context)
 
 
 @login_required
 def requests_list(request):
-    """List incoming and outgoing payment requests for the current user."""
-    incoming = PaymentRequest.objects.filter(requested_from=request.user)
-    outgoing = PaymentRequest.objects.filter(requester=request.user)
-    return render(request, 'payapp/requests.html', {'incoming_requests': incoming, 'outgoing_requests': outgoing})
+    """List incoming and outgoing pending payment requests for the current user."""
+    incoming = PaymentRequest.objects.filter(requested_from=request.user, status=PaymentRequest.STATUS_REQUESTED)
+    outgoing = PaymentRequest.objects.filter(requester=request.user, status=PaymentRequest.STATUS_REQUESTED)
+    return render(request, 'requests.html', {'incoming_requests': incoming, 'outgoing_requests': outgoing})
+
+
+@login_required
+def cancel_request(request, pk):
+    if request.method != 'POST':
+        return redirect('payapp:requests')
+
+    pr = get_object_or_404(PaymentRequest, pk=pk)
+    if pr.requester != request.user:
+        messages.error(request, 'You can only cancel your own requests.')
+        return redirect('payapp:requests')
+
+    if pr.status != PaymentRequest.STATUS_REQUESTED:
+        messages.error(request, 'Only pending requests can be cancelled.')
+        return redirect('payapp:requests')
+
+    pr.delete()
+    messages.success(request, 'Request cancelled.')
+    return redirect('payapp:requests')
 
 
 @login_required
@@ -120,7 +161,7 @@ def make_payment(request):
             return redirect('payapp:make_payment')
 
         # convert amount to receiver currency for crediting
-        credited_amount = convert_amount(amount_dec, payer_currency, receiver_currency)
+        credited_amount = convert_amount(request, amount_dec, payer_currency, receiver_currency)
         if credited_amount is None:
             messages.error(request, 'Conversion rate unavailable')
             return redirect('payapp:make_payment')
@@ -143,7 +184,7 @@ def make_payment(request):
         messages.success(request, f'Payment sent to {receiver.username}')
         return redirect('payapp:transactions')
 
-    return render(request, 'payapp/make_payment.html')
+    return render(request, 'make_payment.html')
 
 
 @login_required
@@ -157,13 +198,13 @@ def request_payment(request):
             amount_dec = Decimal(amount)
         except Exception:
             messages.error(request, 'Invalid amount')
-            return redirect('payapp:transactions')
+            return redirect('payapp:request_payment')
 
         try:
             requested_from = User.objects.get(username=from_username)
         except User.DoesNotExist:
             messages.error(request, 'User not found')
-            return redirect('payapp:transactions')
+            return redirect('payapp:request_payment')
 
         PaymentRequest.objects.create(
             requester=request.user,
@@ -173,9 +214,9 @@ def request_payment(request):
             message=message,
         )
         messages.success(request, 'Payment request sent')
-        return redirect('payapp:transactions')
+        return redirect('payapp:dashboard')
 
-    return redirect('payapp:transactions')
+    return render(request, 'request_payment.html')
 
 @login_required
 def accept_request(request, pk):
@@ -191,7 +232,7 @@ def accept_request(request, pk):
     responder = request.user
 
     # convert requested amount into responder's currency
-    amount_to_deduct = convert_amount(pr.amount, pr.currency, responder.currency)
+    amount_to_deduct = convert_amount(request, pr.amount, pr.currency, responder.currency)
     if amount_to_deduct is None:
         messages.error(request, 'Conversion unavailable')
         return redirect('payapp:dashboard')

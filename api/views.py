@@ -25,7 +25,12 @@ def conversion_view(request, from_curr: str, to_curr: str, amount: str):
     except Exception:
         return HttpResponseBadRequest('invalid amount')
 
-    key = (from_curr.upper(), to_curr.upper())
+    from_curr = from_curr.upper()
+    to_curr = to_curr.upper()
+    if from_curr == to_curr:
+        return JsonResponse({"rate": 1.0, "converted_amount": round(amt, 2)})
+
+    key = (from_curr, to_curr)
     if key not in RATES:
         return HttpResponseNotFound('unsupported currency')
 

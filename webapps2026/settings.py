@@ -23,15 +23,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-*3+i0_pjls)n6vh_)^f1&4@@==$t*5we9tx103$n!*ri#0s8h4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -44,10 +43,16 @@ INSTALLED_APPS += [
     'rest_framework',
     'crispy_forms',
     'crispy_tailwind',
-    'register',
-    'payapp',
-    'api',
+    'login.apps.LoginConfig',
+    'register.apps.RegisterConfig',
+    'admindashboard.apps.AdminDashboardConfig',
+    'payapp.apps.PayappConfig',
+    'api.apps.ApiConfig',
 ]
+
+# Redirect users to the custom login page used by the login app.
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/payments/'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -139,6 +144,17 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
+# Security settings for HTTPS deployment
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 # Crispy forms configuration
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"

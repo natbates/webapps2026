@@ -38,6 +38,13 @@ class PayappTests(TestCase):
         tx = Transaction.objects.filter(sender=alice, receiver=bob).first()
         self.assertIsNotNone(tx)
 
+    def test_request_payment_page_renders(self):
+        self.client.login(username='alice', password='pass')
+        url = reverse('payapp:request_payment')
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Request Payment')
+
     def test_request_and_accept(self):
         # alice requests 50 GBP from bob
         self.client.login(username='alice', password='pass')
@@ -62,3 +69,37 @@ class PayappTests(TestCase):
         # transaction recorded
         tx = Transaction.objects.filter(sender=self.bob, receiver=self.alice).first()
         self.assertIsNotNone(tx)
+
+    def test_cancel_outgoing_request(self):
+        self.client.login(username='alice', password='pass')
+        url = reverse('payapp:request_payment')
+        resp = self.client.post(url, {'from_username': 'bob', 'amount': '50', 'currency': 'GBP', 'message': 'test'})
+        pr = PaymentRequest.objects.filter(requester=self.alice, requested_from=self.bob).first()
+        self.assertIsNotNone(pr)
+
+        cancel_url = reverse('payapp:cancel_request', args=[pr.id])
+        resp = self.client.post(cancel_url)
+        self.assertIn(resp.status_code, (302, 301))
+        self.assertFalse(PaymentRequest.objects.filter(pk=pr.pk).exists())
+
+    def test_requests_list_only_shows_pending(self):
+        self.client.login(username='alice', password='pass')
+        # create one pending and one accepted request
+        PaymentRequest.objects.create(requester=self.alice, requested_from=self.bob, amount=Decimal('10'), currency='GBP', status=PaymentRequest.STATUS_REQUESTED)
+        PaymentRequest.objects.create(requester=self.alice, requested_from=self.bob, amount=Decimal('20'), currency='GBP', status=PaymentRequest.STATUS_ACCEPTED)
+
+        url = reverse('payapp:requests')
+        resp = self.client.get(url)
+        self.assertContains(resp, 'To: bob')
+        self.assertNotContains(resp, '20 GBP')
+
+    def test_transactions_page_shows_completed(self):
+        self.client.login(username='alice', password='pass')
+        Transaction.objects.create(sender=self.alice, receiver=self.bob, amount=Decimal('10'), currency='GBP', status=Transaction.STATUS_COMPLETED)
+        Transaction.objects.create(sender=self.alice, receiver=self.bob, amount=Decimal('20'), currency='GBP', status=Transaction.STATUS_PENDING)
+
+        url = reverse('payapp:transactions')
+        resp = self.client.get(url)
+        self.assertContains(resp, 'Sent to bob')
+        self.assertContains(resp, '10.00 GBP')
+        self.assertContains(resp, '20.00 GBP')
