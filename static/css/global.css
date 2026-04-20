@@ -56,6 +56,13 @@ img {
   height: auto;
 }
 
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: none;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;

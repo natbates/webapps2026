@@ -27,6 +27,7 @@ urlpatterns = [
     path('register/', include('register.urls')),
     path('payments/', include('payapp.urls')),
     path('api/', include('api.urls')),
+    path('api-auth/', include('rest_framework.urls')),  # browsable API login/logout
 ]
 
 if settings.DEBUG:

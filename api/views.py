@@ -1,7 +1,9 @@
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseNotFound
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import ConversionSerializer
 
-# Hard coded conversion rates for simplicity; in a real app, these would be dynamic and likely stored in a database or fetched from an external API.
-
+# Hard coded conversion rates for simplicity. The REST API must return static rates per assignment.
 RATES = {
     ('GBP', 'USD'): 1.3,
     ('GBP', 'EUR'): 1.15,
@@ -12,29 +14,36 @@ RATES = {
 }
 
 
+class ConversionView(APIView):
+    """REST API view for currency conversion."""
+
+    def get(self, request, from_curr: str, to_curr: str, amount: str):
+        try:
+            amt = float(amount)
+        except ValueError:
+            return Response({'detail': 'invalid amount'}, status=status.HTTP_400_BAD_REQUEST)
+
+        from_curr = from_curr.upper()
+        to_curr = to_curr.upper()
+        if from_curr == to_curr:
+            serializer = ConversionSerializer({'rate': 1.0, 'converted_amount': round(amt, 2)})
+            return Response(serializer.data)
+
+        key = (from_curr, to_curr)
+        if key not in RATES:
+            return Response({'detail': 'unsupported currency'}, status=status.HTTP_404_NOT_FOUND)
+
+        rate = RATES[key]
+        converted = round(amt * rate, 2)
+        serializer = ConversionSerializer({'rate': rate, 'converted_amount': converted})
+        return Response(serializer.data)
+
+
 def conversion_view(request, from_curr: str, to_curr: str, amount: str):
-    """Function-based conversion view.
-
-    GET /api/conversion/<from>/<to>/<amount>/ -> JSON
-    """
-    if request.method != 'GET':
-        return HttpResponseBadRequest('only GET allowed')
-
-    try:
-        amt = float(amount)
-    except Exception:
-        return HttpResponseBadRequest('invalid amount')
-
-    from_curr = from_curr.upper()
-    to_curr = to_curr.upper()
-    if from_curr == to_curr:
-        return JsonResponse({"rate": 1.0, "converted_amount": round(amt, 2)})
-
-    key = (from_curr, to_curr)
-    if key not in RATES:
-        return HttpResponseNotFound('unsupported currency')
-
-    rate = RATES[key]
-    converted = round(amt * rate, 2)
-    return JsonResponse({"rate": rate, "converted_amount": converted})
+    """Compatibility wrapper for legacy internal service calls."""
+    view = ConversionView.as_view()
+    response = view(request, from_curr=from_curr, to_curr=to_curr, amount=amount)
+    if hasattr(response, 'render'):
+        response.render()
+    return response
 

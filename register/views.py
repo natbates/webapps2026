@@ -9,7 +9,7 @@ from .models import Currency
 
 User = get_user_model()
 
-
+# Use the custom user model so registration saves balance and currency data.
 class RegistrationForm(UserCreationForm):
     currency = forms.ChoiceField(choices=Currency.choices, initial=Currency.GBP)
 
@@ -17,19 +17,23 @@ class RegistrationForm(UserCreationForm):
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'currency')
 
+    password1 = forms.CharField(
+        label='Password',
+        strip=False,
+        widget=forms.PasswordInput,
+        min_length=8,
+        help_text='Password must be at least 8 characters.',
+    )
+    password2 = forms.CharField(
+        label='Password confirmation',
+        strip=False,
+        widget=forms.PasswordInput,
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_tag = False
-
-    def clean_password2(self):
-        password2 = super().clean_password2()
-        if password2 and len(password2) < 8:
-            raise forms.ValidationError('Password must be at least 8 characters.')
-        # A real production system should also check complexity, dictionary words,
-        # and common patterns, but the assignment specification only requires
-        # a basic password length requirement.
-        return password2
 
 
 def _convert_initial_balance(currency: str) -> Decimal:
@@ -38,6 +42,7 @@ def _convert_initial_balance(currency: str) -> Decimal:
         'USD': Decimal('1.25'),
         'EUR': Decimal('1.16'),
     }
+    # Convert the base 500 GBP to the selected registration currency.
     return (Decimal('500.00') * rates.get(currency, Decimal('1.00'))).quantize(Decimal('0.01'))
 
 

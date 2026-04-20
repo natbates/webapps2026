@@ -17,6 +17,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+DEVELOPMENT = 'runserver' in sys.argv
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -25,7 +26,7 @@ TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
 SECRET_KEY = 'django-insecure-*3+i0_pjls)n6vh_)^f1&4@@==$t*5we9tx103$n!*ri#0s8h4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = DEVELOPMENT
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '13.222.3.236', 'compensatecompanion.duckdns.org']
 
@@ -148,7 +149,7 @@ STATICFILES_DIRS = [
 ]
 
 # Security settings for HTTPS deployment
-SECURE_COOKIE = not DEBUG and not TESTING
+SECURE_COOKIE = not DEBUG and not TESTING and not DEVELOPMENT
 SESSION_COOKIE_SECURE = SECURE_COOKIE
 CSRF_COOKIE_SECURE = SECURE_COOKIE
 SECURE_HSTS_SECONDS = 31536000
@@ -157,7 +158,7 @@ SECURE_HSTS_PRELOAD = True
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
-SECURE_SSL_REDIRECT = not DEBUG and not TESTING
+SECURE_SSL_REDIRECT = not DEBUG and not TESTING and not DEVELOPMENT
 
 # Crispy forms configuration
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"

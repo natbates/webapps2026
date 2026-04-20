@@ -14,6 +14,7 @@ class Transaction(models.Model):
 
     Fields chosen to satisfy brief requirements: sender, receiver, amount, currency, status, timestamp.
     """
+    # One payment record is stored for every transfer between users.
 
     STATUS_PENDING = 'pending'
     STATUS_COMPLETED = 'completed'
@@ -43,6 +44,7 @@ class PaymentRequest(models.Model):
 
     Includes requester/requestee, amount, currency, message and status so the flow can be accepted/rejected.
     """
+    # Payment requests are stored until accepted, rejected, or cancelled.
 
     STATUS_REQUESTED = 'requested'
     STATUS_ACCEPTED = 'accepted'

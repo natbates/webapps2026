@@ -21,6 +21,7 @@ def _convert_amount_internal(from_curr: str, to_curr: str, amount: Decimal) -> D
     if from_curr == to_curr:
         return amount.quantize(Decimal('0.01'))
 
+    # Fallback conversion using the same REST service logic without HTTP.
     rf = RequestFactory()
     req = rf.get(f'/api/conversion/{from_curr}/{to_curr}/{amount}/')
     resp = conversion_view(req, from_curr, to_curr, str(amount))
@@ -38,6 +39,7 @@ def _convert_amount_internal(from_curr: str, to_curr: str, amount: Decimal) -> D
 
 def convert_amount(request, amount: Decimal, from_curr: str, to_curr: str) -> Decimal:
     """Convert `amount` from `from_curr` to `to_curr` via the REST service."""
+    # The payment logic calls the REST API over HTTP so the service is used as required.
     if from_curr == to_curr:
         return amount.quantize(Decimal('0.01'))
 
@@ -46,6 +48,7 @@ def convert_amount(request, amount: Decimal, from_curr: str, to_curr: str) -> De
     api_url = request.build_absolute_uri(reverse('api:conversion', args=[from_curr, to_curr, str(amount)]))
 
     try:
+        # Call the currency API on the same server over HTTP.
         with urllib.request.urlopen(api_url, timeout=5) as response:
             if response.status != 200:
                 return _convert_amount_internal(from_curr, to_curr, amount)
@@ -73,6 +76,7 @@ def transactions(request):
         Q(sender=request.user) | Q(receiver=request.user)
     ).order_by('-created_at')
 
+    # Build a list of transactions with converted amounts in the user's currency.
     tx_list = []
     user_currency = request.user.currency
     for tx in qs:
@@ -113,6 +117,7 @@ def cancel_request(request, pk):
     if request.method != 'POST':
         return redirect('payapp:requests')
 
+    # Only the requesting user may cancel their own request.
     pr = get_object_or_404(PaymentRequest, pk=pk)
     if pr.requester != request.user:
         messages.error(request, 'You can only cancel your own requests.')
@@ -129,7 +134,7 @@ def cancel_request(request, pk):
 
 @login_required
 def make_payment(request):
-    """Placeholder view for making a payment — implement form handling later."""
+    """Handle a payment from the logged-in user to another registered user."""
     if request.method == 'POST':
         to_username = request.POST.get('to_username')
         amount = request.POST.get('amount')
@@ -141,6 +146,7 @@ def make_payment(request):
             return redirect('payapp:make_payment')
 
         try:
+            # Look up by email first if input contains @, otherwise use username.
             if to_username and '@' in to_username:
                 receiver = User.objects.get(email__iexact=to_username)
             else:
@@ -163,7 +169,7 @@ def make_payment(request):
             messages.error(request, 'Insufficient funds')
             return redirect('payapp:make_payment')
 
-        # convert amount to receiver currency for crediting
+        # Convert the payment amount from sender currency to receiver currency.
         credited_amount = convert_amount(request, amount_dec, payer_currency, receiver_currency)
         if credited_amount is None:
             messages.error(request, 'Conversion rate unavailable')
@@ -192,6 +198,7 @@ def make_payment(request):
 
 @login_required
 def request_payment(request):
+    """Create a payment request from the logged-in user to another registered user."""
     if request.method == 'POST':
         from_identifier = request.POST.get('from_username')
         amount = request.POST.get('amount')
@@ -204,6 +211,7 @@ def request_payment(request):
             return redirect('payapp:request_payment')
 
         try:
+            # Request payment using the other user's email or username.
             if from_identifier and '@' in from_identifier:
                 requested_from = User.objects.get(email__iexact=from_identifier)
             else:
@@ -230,6 +238,7 @@ def accept_request(request, pk):
         return redirect('payapp:dashboard')
 
     pr = get_object_or_404(PaymentRequest, pk=pk)
+    # Only allow the requested user to accept payment requests.
     if pr.requested_from != request.user or pr.status != PaymentRequest.STATUS_REQUESTED:
         messages.error(request, 'Cannot accept this request')
         return redirect('payapp:dashboard')
@@ -237,7 +246,7 @@ def accept_request(request, pk):
     requester = pr.requester
     responder = request.user
 
-    # convert requested amount into responder's currency for deduction
+    # Convert the request amount into the responder's currency for deduction.
     amount_to_deduct = convert_amount(request, pr.amount, pr.currency, responder.currency)
     if amount_to_deduct is None:
         messages.error(request, 'Conversion unavailable')
@@ -247,6 +256,7 @@ def accept_request(request, pk):
         messages.error(request, 'Insufficient funds to accept request')
         return redirect('payapp:dashboard')
 
+    # Calculate how much the requester should receive in their own currency.
     credited_amount = convert_amount(request, pr.amount, pr.currency, requester.currency)
     if credited_amount is None:
         messages.error(request, 'Conversion unavailable')
@@ -279,6 +289,7 @@ def reject_request(request, pk):
     if request.method != 'POST':
         return redirect('payapp:dashboard')
     pr = get_object_or_404(PaymentRequest, pk=pk)
+    # Only the requested user can reject this pending payment request.
     if pr.requested_from != request.user or pr.status != PaymentRequest.STATUS_REQUESTED:
         messages.error(request, 'Cannot reject this request')
         return redirect('payapp:dashboard')

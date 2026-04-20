@@ -4,6 +4,7 @@ from django.contrib import messages
 
 
 class CustomLoginView(LoginView):
+    """Custom login view that displays the standard login form and adds a success message."""
     template_name = 'login.html'
 
     def get_form(self, form_class=None):

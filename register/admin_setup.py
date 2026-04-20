@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 
 def ensure_default_admin():
     """Ensure a default admin account exists with fixed credentials."""
+    # This creates the required admin1/admin1 account after migrations run.
     User = get_user_model()
     defaults = {
         'email': 'admin1@example.com',
