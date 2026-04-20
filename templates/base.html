@@ -10,8 +10,8 @@
   </head>
   <body>
     <nav class="bg-neutral-200 text-neutral-900">
-      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
           <a class="flex items-center gap-3" href="/">
             <img src="{% static 'images/logo.svg' %}" alt="Compansate Companion" class="h-8 inline-block">
           </a>
@@ -26,7 +26,7 @@
             </div>
           {% endif %}
         </div>
-        <div class="flex items-center space-x-3">
+        <div class="flex flex-wrap items-center gap-2 justify-end">
           {% if request.user.is_authenticated %}
             <a class="rounded-2xl border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-200" href="{% url 'payapp:dashboard' %}">Home</a>
             <a class="rounded-2xl border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-200" href="{% url 'payapp:transactions' %}">Transactions</a>

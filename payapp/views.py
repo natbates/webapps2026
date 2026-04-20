@@ -141,7 +141,10 @@ def make_payment(request):
             return redirect('payapp:make_payment')
 
         try:
-            receiver = User.objects.get(username=to_username)
+            if to_username and '@' in to_username:
+                receiver = User.objects.get(email__iexact=to_username)
+            else:
+                receiver = User.objects.get(username=to_username)
         except User.DoesNotExist:
             messages.error(request, 'Recipient not found')
             return redirect('payapp:make_payment')
@@ -174,7 +177,7 @@ def make_payment(request):
             receiver.balance += credited_amount
             receiver.save()
 
-            tx = Transaction.objects.create(
+            Transaction.objects.create(
                 sender=payer,
                 receiver=receiver,
                 amount=amount_dec,
@@ -190,7 +193,7 @@ def make_payment(request):
 @login_required
 def request_payment(request):
     if request.method == 'POST':
-        from_username = request.POST.get('from_username')
+        from_identifier = request.POST.get('from_username')
         amount = request.POST.get('amount')
         currency = request.POST.get('currency') or request.user.currency
         message = request.POST.get('message', '')
@@ -201,7 +204,10 @@ def request_payment(request):
             return redirect('payapp:request_payment')
 
         try:
-            requested_from = User.objects.get(username=from_username)
+            if from_identifier and '@' in from_identifier:
+                requested_from = User.objects.get(email__iexact=from_identifier)
+            else:
+                requested_from = User.objects.get(username=from_identifier)
         except User.DoesNotExist:
             messages.error(request, 'User not found')
             return redirect('payapp:request_payment')
@@ -231,7 +237,7 @@ def accept_request(request, pk):
     requester = pr.requester
     responder = request.user
 
-    # convert requested amount into responder's currency
+    # convert requested amount into responder's currency for deduction
     amount_to_deduct = convert_amount(request, pr.amount, pr.currency, responder.currency)
     if amount_to_deduct is None:
         messages.error(request, 'Conversion unavailable')
@@ -241,11 +247,16 @@ def accept_request(request, pk):
         messages.error(request, 'Insufficient funds to accept request')
         return redirect('payapp:dashboard')
 
+    credited_amount = convert_amount(request, pr.amount, pr.currency, requester.currency)
+    if credited_amount is None:
+        messages.error(request, 'Conversion unavailable')
+        return redirect('payapp:dashboard')
+
     with db_transaction.atomic():
         responder.balance -= amount_to_deduct
         responder.save()
 
-        requester.balance += pr.amount
+        requester.balance += credited_amount
         requester.save()
 
         Transaction.objects.create(
@@ -254,7 +265,6 @@ def accept_request(request, pk):
             amount=amount_to_deduct,
             currency=responder.currency,
             status=Transaction.STATUS_COMPLETED,
-            reference=f'AcceptedRequest:{pr.id}'
         )
         pr.status = PaymentRequest.STATUS_ACCEPTED
         pr.responded_at = timezone.now()

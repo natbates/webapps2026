@@ -22,6 +22,15 @@ class RegistrationForm(UserCreationForm):
         self.helper = FormHelper()
         self.helper.form_tag = False
 
+    def clean_password2(self):
+        password2 = super().clean_password2()
+        if password2 and len(password2) < 8:
+            raise forms.ValidationError('Password must be at least 8 characters.')
+        # A real production system should also check complexity, dictionary words,
+        # and common patterns, but the assignment specification only requires
+        # a basic password length requirement.
+        return password2
+
 
 def _convert_initial_balance(currency: str) -> Decimal:
     rates = {

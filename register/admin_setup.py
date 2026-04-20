@@ -6,23 +6,23 @@ def ensure_default_admin():
     """Ensure a default admin account exists with fixed credentials."""
     User = get_user_model()
     defaults = {
-        'email': 'admin@example.com',
+        'email': 'admin1@example.com',
         'is_staff': True,
         'is_superuser': True,
         'currency': 'GBP',
         'balance': Decimal('500.00'),
     }
 
-    admin, created = User.objects.get_or_create(username='admin', defaults=defaults)
+    admin, created = User.objects.get_or_create(username='admin1', defaults=defaults)
 
     if created:
-        admin.set_password('password123')
+        admin.set_password('admin1')
         admin.save()
         return admin
 
     updated = False
-    if not admin.check_password('password123'):
-        admin.set_password('password123')
+    if not admin.check_password('admin1'):
+        admin.set_password('admin1')
         updated = True
 
     for field, value in defaults.items():

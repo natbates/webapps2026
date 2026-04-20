@@ -1,5 +1,3 @@
-import uuid
-from decimal import Decimal
 from django.db import models
 from django.conf import settings
 
@@ -15,7 +13,6 @@ class Transaction(models.Model):
     """Represents a completed or pending transfer between users.
 
     Fields chosen to satisfy brief requirements: sender, receiver, amount, currency, status, timestamp.
-    A UUID `id` and optional `reference` help with idempotency/tracing.
     """
 
     STATUS_PENDING = 'pending'
@@ -27,14 +24,12 @@ class Transaction(models.Model):
         (STATUS_FAILED, 'failed'),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sent_transactions', on_delete=models.CASCADE)
     receiver = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='received_transactions', on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
-    reference = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -58,7 +53,6 @@ class PaymentRequest(models.Model):
         (STATUS_REJECTED, 'rejected'),
     ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     requester = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='payment_requests_made', on_delete=models.CASCADE)
     requested_from = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='payment_requests_received', on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=12, decimal_places=2)

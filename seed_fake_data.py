@@ -98,7 +98,6 @@ def make_transactions(users, total=60):
             currency=currency,
             status=status,
             created_at=timezone.now() - timedelta(days=random.randint(0, 45), hours=random.randint(0, 23), minutes=random.randint(0, 59)),
-            reference=f'FakeTxn{random.randint(10000,99999)}',
         )
         transactions.append(tx)
     Transaction.objects.bulk_create(transactions)
@@ -117,11 +116,6 @@ def make_requests(users, total=40):
             k=1,
         )[0]
         created_at = timezone.now() - timedelta(days=random.randint(0, 45), hours=random.randint(0, 23), minutes=random.randint(0, 59))
-        responded_at = None
-        if status != PaymentRequest.STATUS_REQUESTED:
-            responded_at = created_at + timedelta(hours=random.randint(1, 72))
-            if responded_at > timezone.now():
-                responded_at = timezone.now()
 
         req = PaymentRequest(
             requester=requester,
@@ -131,7 +125,6 @@ def make_requests(users, total=40):
             message='Please send the payment when you can.',
             status=status,
             created_at=created_at,
-            responded_at=responded_at,
         )
         requests.append(req)
     PaymentRequest.objects.bulk_create(requests)

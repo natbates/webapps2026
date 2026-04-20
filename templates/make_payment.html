@@ -7,8 +7,9 @@
   <h1 class="text-2xl font-semibold mb-4">Make Payment</h1>
   <form method="post">{% csrf_token %}
     <div class="mb-3">
-      <label for="to_username" class="block text-sm mb-1">Recipient username</label>
-      <input id="to_username" name="to_username" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-200/40" required>
+      <label for="to_username" class="block text-sm mb-1">Recipient email or username</label>
+      <input id="to_username" name="to_username" placeholder="recipient@example.com" class="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-200/40" required>
+      <p class="mt-2 text-xs text-slate-500">Use the recipient's registered email address or username.</p>
     </div>
 
     <div class="mb-3">
