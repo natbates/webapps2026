@@ -1,0 +1,147 @@
+Lab 6 - Security
+Introduction
+In this lab exercise, we will look at various security aspects in Django. After this class, you should be able to:
+
+Enabled and used CSRF and XSS protection
+Generating certificates with the OpenSSL cryptographic library
+Enable HTTPS
+Note:
+
+Remember to clean and build your project before running it after you make any changes to your code.
+This lab will build upon the previous one.
+Cross-site request forgery (CSRF) protection
+1. Open the CommentStore project on PyCharm of Lab 5.
+
+2. Open register/login.html, register/register.html and commentstoreapp/comment.html templates. We need to add the {% csrf_token %} template tag inside all forms.
+
+3. Open commentstoreapp/views.py and register/views.pt files. To enable CSRF protectionLinks to an external site., we need to replace all @csrf_exempt annotations in the view functions with @csrf_protect or @requires_csrf_token annotations and make the necessary imports.
+
+Cross-site scripting (XSS) protection
+1. Open the base.html template and remove the following tags
+
+{% autoescape off %}
+
+{% endautoescape %}
+Generating certificates with the OpenSSL
+OpenSSLLinks to an external site.is a robust, full-featured toolkit for general-purpose cryptography and secure communication. The OpenSSL cryptographic library implements a wide range of cryptographic algorithms used in various Internet standards. The services provided by this library are used by the OpenSSL implementations of Transport Layer Security (TLS).  Some examples of functionalities are symmetric encryption, public key cryptography, key agreement, certificate handling, cryptographic hash functions, cryptographic pseudo-random number generators, message authentication codes (MACs), among others.
+
+1. Open a Windows Powershell terminal and use ssh (secure shell) command to connect to sussex unix server
+
+PS C:\Users\username> ssh username@unix.sussex.ac.uk
+If prompted, you should accept continuing the connection and then insert your sussex account password. 
+NOTE: The password will not be shown when you type, but it is getting the keyboard input!
+
+The authenticity of host 'unix.sussex.ac.uk (139.184.24.30)' can't be established.
+ED25519 key fingerprint is SHA256:cDphVvdJsiHQsu5g9RrZPswAnChsIDH9Xow9yUj/p9c.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+If your login is successful, you will see a prompt as the image below.
+
+image.png
+
+You should run the man openssl command to see the manual pages on the command. 
+
+2. You can check the version by entering the command
+
+openssl version -a
+Nonetheless the server version being 1.0.2, the current version is 3.1Links to an external site.. You can check the list of standard commands, message digest commands and cipher commands by entering openssl help. 
+
+4. You can use the genrsaLinks to an external site. command to generate a key pair.  However, since it was deprecated, we are going to use the genpkeyLinks to an external site. command instead. You can check the command usage by typing openssl genpkey -help.  To generate an RSA private key using default parameters and save it to the key.pem file:
+
+openssl genpkey -algorithm RSA -out key.pem
+However, we will use the following command, keep note of the password you set (here it is webapps):
+
+openssl genpkey -algorithm RSA -out key.pem -pkeyopt rsa_keygen_bits:2048 \
+-aes-128-cbc -pass pass:webapps
+which encrypts the key with a 128 bits AES algorithm, protects the key with a passphrase, and the output key has 2048 bits. You can check only the header part of the private key with the command:
+
+openssl rsa -in key.pem -text -noout
+5. Now, extract the public key from the private key with the command:
+
+openssl rsa -in key.pem -pubout > public.pem
+ You can check the public key details with the command:
+
+ openssl rsa -in public.pem -pubin -text -noout
+6. Now, you need to generate a Certificate Signing Request (CSR), one of the first steps towards getting an SSL/TLS certificate. A CSR includes a public key and extra information, e.g., common name, organization, and country, inserted into the certificate. Remember to provide accurate information if the certificate is being bought from a CA. To create a CSR after providing all of the necessary information along with a private key, you can use the following command:
+
+openssl req -newkey rsa:2048 -nodes -keyout domain_name.key -out domain_name.csr
+Please note that it is created a 2048-bit RSA key that is not protected by a passphrase. You should replace domain_name with the domain name of your site, e.g. localhost or webapps. Once the CSR file is created, you can send it to a CA and request a certificate. If the private key already exists, you should proceed as follows:
+
+openssl req -key domain_name.key -new -out domain_name.csr
+It is also possible to get the extra security of an SSL certificate by signing it yourself with your private key, also known as a self-signed certificate. A self-signed certificate is as effective as a CA-signed certificate. However, due to the lack of a TTP, their use is recommended within an organization. You may also receive a warning from your browser that they are not secure. 
+
+7. You can generate a 2048-bit private key and a self-signed certificate to use HTTPS to secure a web server with the command
+
+openssl req -x509 -newkey rsa:2048 -keyout domain_name.key -out domain_name.crt -sha256 -days 365
+8. You can view the certificate content with the following command
+
+openssl x509 -text -noout -in domain_name.crt
+Note: You can also get a free certificate for testing purposes from ZeroSSLLinks to an external site..
+
+Enabling HTTPS
+1. You can enable HTTPS by using the RunServerPlusLinks to an external site. Django extension. First, you need to install the following packages using the Python package console on PyCharm Pro:
+
+django-extensions, a collection of custom extensions for the Django Framework
+werkzeug, a comprehensive Web Server Gateway Interface (WSGI) web application library
+pyOpenSSL, a Python wrapper around the OpenSSL library
+2. To enable django_extensions in your project, you need to add it to INSTALLED_APPS in your projects settings.py file:
+
+INSTALLED_APPS = (
+    ...
+    'django_extensions',
+    ...
+)
+ 3. You need to copy the private key and certificate, i.e., domain_name.key and domain_name.crt, generated in the previous task from the Sussex Unix server to your Django project. Open Software Hub and launch FileZilla. You need to enter the following information:
+
+Server: unix.sussex.ac.uk
+Username: <your username>
+Password: <your password>
+Port: 22
+4. Click on Terminal on PyCharm and open a command prompt as shown below.
+
+image.png
+
+5. Now, check that the virtual environment has been activated with the(venv). To do this, in your project open the venv folder, then open Scripts, right click on activate.bat and click Copy Path/Reference. Select the Absolute Path, then run this command in the terminal.
+    Then insert the command below and press Enter to launch the development server, making sure to change domain_name to what you used before. You will need to enter the passphrase twice.
+NOTE: The password will not be shown when you type, but it is getting the keyboard input!
+
+python manage.py runserver_plus --cert-file domain_name.crt --key-file domain_name.key
+
+If you get an error saying:
+
+ModuleNotFoundError: No module named <module-name>
+Then inside this terminal with type the following:
+
+pip install <module-name>
+You may need to do this for the 3 modules we installed earlier 
+
+
+If everything goes well, you will get the following output:
+
+(venv) C:\Users\<your_username>\IdeaProjects\CommentStore>python manage.py runserver_plus --cert-file domain_name.crt --key-file domain_name.key 
+Enter PEM pass phrase:
+ * Restarting with stat
+Performing system checks...
+
+System check identified no issues (0 silenced).
+
+Django version 4.1.5, using settings 'CommentStore.settings'
+Development server is running at https://[127.0.0.1]:8000/
+Using the Werkzeug debugger (http://werkzeug.pocoo.org/)
+Quit the server with CTRL-BREAK.
+ * Debugger is active!
+ * Debugger PIN: 135-316-272
+Enter PEM pass phrase:
+
+You can access the web application and view information on the certificate as shown below.
+
+image.png
+
+ 
+
+6. You can set the address and port the development server should bind to by adding
+
+... runserver_plus 0.0.0.0:8000 ...
+OR by updating the settings.py file settings to automatically default your development to an address/port:
+
+RUNSERVERPLUS_SERVER_ADDRESS_PORT = '0.0.0.0:8000'
