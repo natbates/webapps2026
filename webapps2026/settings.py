@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
 # Third-party and local apps required by the project
 INSTALLED_APPS += [
+    'django_extensions',
     'rest_framework',
     'crispy_forms',
     'crispy_tailwind',
@@ -171,3 +172,6 @@ AUTH_USER_MODEL = 'register.User'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Django Extensions - runserver_plus HTTPS configuration
+RUNSERVERPLUS_SERVER_ADDRESS_PORT = '0.0.0.0:8000'
