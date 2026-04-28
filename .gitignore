@@ -37,3 +37,7 @@ htmlcov/
 # Local environment
 .env
 .env.*
+
+# keys
+compensatecompanion.key
+compensatecompanion.crt
