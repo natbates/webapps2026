@@ -1,10 +1,8 @@
 from decimal import Decimal
-from django.contrib import admin
 from django.contrib.auth import get_user_model
 
 # Note: The coursework requires you to implement admin functionality via views,
-# not to rely on Django's admin site. The registration below is provided for
-# convenience when developing locally — you may ignore it for marking.
+# not to rely on Django's admin site.
 
 User = get_user_model()
 
@@ -41,9 +39,3 @@ def ensure_default_admin():
         admin.save()
 
     return admin
-
-
-@admin.register(User)
-class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ('username', 'email', 'is_staff', 'is_superuser', 'currency', 'balance')
-    search_fields = ('username', 'email')
