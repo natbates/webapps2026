@@ -1,10 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:wght@400;700&display=swap');
 
-/* Merged fonts and small global overrides (was tailwind_input.css + fonts.css)
-   Tailwind utilities are still loaded via CDN during development.
-*/
-
-/* Local font-face entries (adjust filenames if needed) */
 @font-face {
   font-family: 'LocalHeader';
   src: url('../fonts/Rubik-VariableFont_wght.ttf') format('truetype');
